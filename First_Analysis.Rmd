@@ -1,0 +1,23 @@
+---
+title: "Global patterns in predator—prey size relationships, Analysis"
+author: "Scott Connors"
+date: "28/10/2020"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+First the data needs to be read into R.
+
+```{r, eval=FALSE}
+haddock_data <- read_csv("Haddock_Data.csv")
+```
+
+I want to create a tibble with the total length of fish caught per year.
+
+```{r}
+annual_length <- haddock_data %>% group_by(Year) %>% summarise(annual_predator_length = sum(`Mean length of predator`))
+```
