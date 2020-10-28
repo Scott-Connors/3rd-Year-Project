@@ -16,8 +16,14 @@ First the data needs to be read into R.
 haddock_data <- read_csv("Haddock_Data.csv")
 ```
 
-I want to create a tibble with the total length of fish caught per year.
+I want to create a tibble with the total length of fish analysed per year.
 
 ```{r}
 annual_length <- haddock_data %>% group_by(Year) %>% summarise(annual_predator_length = sum(`Mean length of predator`))
+```
+
+Plotting the data as below shows that in some years much more data was collected than in others.
+
+```{r}
+annual_length %>% ggplot(aes(x=Year, y=annual_predator_length)) + geom_point() + geom_line() + ylab("Annual Length [cm/year]")
 ```
