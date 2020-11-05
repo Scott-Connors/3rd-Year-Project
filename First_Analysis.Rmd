@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Analysing prey of Haddock data
 
-For this assignment I have decided to use data from the DAPSTOM database, found here (https://www.cefas.co.uk/data-and-publications/fish-stomach-records/), specifically data regarding prey types of Haddock to make some simple plots and analysis of.
+For this assignment I have decided to use data from the DAPSTOM database, found here (https://www.cefas.co.uk/data-and-publications/fish-stomach-records/), specifically data regarding prey types of Haddock to make some simple plots and analysis.
 
 ## Preparing & plotting the data
 
@@ -30,7 +30,7 @@ I first plan on looking at the `Mean length of predator` data, so to check visua
 plot(haddock_data$`Mean length of predator`)
 ```
 
-I want to create a tibble containing the mean length of Haddock grouped by year, so that eventually I can create a simple plot analysing the average length of the Haddock recorded each year. I do this as below using functions such as `group_by()` and `summarise()`. 
+I want to create a tibble containing the mean length of Haddock grouped by year, so that eventually I can create a simple plot analysing the average length of the Haddock recorded for each year. I do this as below using functions such as `group_by()` and `summarise()`. 
 
 ```{r, message=FALSE}
 annual_mean_length <- haddock_data %>% group_by(Year) %>% summarise(annual_predator_length = mean(`Mean length of predator`))
@@ -42,7 +42,9 @@ Now that I have created the data I want to plot, I can make the graph using the 
 annual_mean_length %>% ggplot(aes(x=Year, y=annual_predator_length)) + geom_point() + geom_line() + ylab("Annual Mean Length [cm]")
 ```
 
-Now I'd like to look at what types of prey the Haddock is eating depending on what Sea it lives in. So, I can group the data by `Prey common name` & `Sea` and use the `count()` function to make a tibble of the amounts of each prey type also sorted by `Sea`.
+## Prey types in different Sea's
+
+Now I'd like to look at what types of prey the Haddock is eating depending on what Sea it lives in. So, I can group the data by `Prey common name` & `Sea` and use the `count()` function to make a tibble of the amounts of each prey type sorted by `Sea`.
 
 ```{r}
 prey_number <- haddock_data %>% group_by(`Prey common name`, Sea) %>% count()
