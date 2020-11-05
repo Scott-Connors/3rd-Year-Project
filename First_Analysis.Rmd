@@ -48,22 +48,24 @@ Now I'd like to look at what types of prey the Haddock is eating depending on wh
 
 ```{r}
 prey_number <- haddock_data %>% group_by(`Prey common name`, Sea) %>% count()
+prey_number
 ```
 
 Because there are a lot of prey types I'm going to remove Prey with less than 10 entries using `filter()`. 
 
 ```{r}
-prey_number <- prey_number %>% filter(n > 10)
+prey_number_10 <- prey_number %>% filter(n > 10)
+prey_number_10
 ```
 
 Next I need to remove the EPMTY `Prey common name` values as this won't provide us with much useful insight one plotted.
 
 ```{r}
-prey_number <- prey_number[-c(4,5),]
+prey_number_10 <- prey_number_10[-c(10,11),]
 ```
 
-Finally using `ggplot()` again I can plot the prey types against amounts on separate plots for each sea using `facet_wrap()`. I've decided to put the prey names on the Y axis simply because they won't overlap each other.
+Finally using `ggplot()` again I can plot the prey types against amounts on separate plots for each sea using `facet_wrap()`. I've decided to put the prey names on the Y axis simply because they won't overlap each other. Looking at the plot's I can see for example that there are much more `MOLLUSCA-BIVALVIA` and `BRISTLE WORMS` eaten by Haddock in the Celtic Sea compared to the Irish Sea. Could this be because the Haddock seem to rely very heavily on eating `NORWAY LOBSTER` in the Irish Sea?
 
 ```{r, message=FALSE}
-prey_number %>% ggplot(aes(x = n, y = `Prey common name`)) + geom_point() + geom_line() + facet_wrap(~Sea)
+prey_number_10 %>% ggplot(aes(x = n, y = `Prey common name`)) + geom_point() + geom_line() + facet_wrap(~Sea)
 ```
