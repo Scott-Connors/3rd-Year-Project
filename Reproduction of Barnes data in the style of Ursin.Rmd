@@ -1,0 +1,91 @@
+---
+title: "Reproduction of Barnes data in the style of Ursin"
+author: "Scott Connors"
+date: "17/11/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Reading the data into R and loading packages.
+
+```{r}
+library(fitdistrplus)
+library(tidyverse)
+barnes_data <- read.delim("Predator_and_prey_body_sizes_in_marine_food_webs_vsn4.txt")
+```
+
+Filtering the data to only include data for the predator Atlantic cod, and looking at some quantities.
+
+```{r}
+atlantic.cod <- barnes_data %>% filter(Predator.common.name=="Atlantic cod")
+atlantic.cod.mean <- atlantic.cod %>% summarise(mean(Predator.mass))
+atlantic.cod.prey.mean <- atlantic.cod %>% summarise(mean(Prey.mass))
+```
+
+## Replicating the size frequency plot for prey
+
+
+eliminating all other columns apart from the ones I need for this plot.
+
+```{r}
+barnes.data.sorted <- barnes.data %>% select(Predator.common.name, Prey.common.name, prey.mass, predator.mass)
+prey.data.grams <- barnes.data.sorted %>% select(Prey.common.name, Prey.mass, Predator.common.name, Predator.mass) #completely unnecessary, not sure why I did this.
+```
+
+counting the amount of each prey and taking the mean weight per prey type.
+
+```{r}
+cod.prey.count <- prey.data.grams %>% group_by(Prey.common.name) %>% count()
+cod.prey.mean <- prey.data.grams %>% group_by(Prey.common.name) %>% summarise(mean(Prey.mass))
+```
+
+Combining the count and mean data into one table.
+
+```{r}
+size.frequency.grams <- full_join(prey.mean, prey.count)
+size.frequency.grams <- size.frequency.grams %>% rename(mean.weight.g = "mean(Prey.mass)")
+```
+
+adding a column of the expected count of each prey type using N=Nw^-1
+
+```{r}
+size.frequency.grams <- size.frequency.grams %>% mutate(expected.count = n*mean.weight.g^-1)
+```
+
+Creating the log weight against log expected numbers numbers plot, which does show the expected shape.
+
+```{r}
+frequency.plot.grams <- size.frequency.grams %>% ggplot(aes(x = log(mean.weight.g), y = log(expected.count))) + geom_point() + geom_smooth(method = 'lm') + ylab("log expected numbers") + xlab("log weight grams") + ggtitle("Size Frequency Plot")
+```
+
+
+
+## Fitting the normal distribution to the log(pred/prey) mass ratio of the Atlantic cod data in the Barnes dataset
+
+
+Calculating the log(pred/prey) mass ratio.
+
+```{r}
+log.pred.w.over.prey.w <- log((atlantic.cod$Predator.mass)/(atlantic.cod$Prey.mass))
+```
+
+Finding mean and standard deviation of log(pred/prey) ratio.
+
+```{r}
+mean(log.pred.w.over.prey.w)
+5.675068
+
+sd(log.pred.w.over.prey.w)
+2.69574
+```
+
+Applying Ursins formula (5).
+
+```{r}
+y <- (exp(-((log.pred.w.over.prey.w - 5.675068)^2)/(2*(2.69574)^2)))/ (2.69574*sqrt(2*pi))
+
+plot(log.pred.w.over.prey.w, y)
+```

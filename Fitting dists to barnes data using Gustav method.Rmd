@@ -1,0 +1,241 @@
+---
+title: "Fitting dists to barnes data using Gustav formula's"
+author: "Scott Connors"
+date: "27/02/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Using Gustav document to fit distributions to the Barnes dataset.
+
+(Direct copy just to get a feel for the method)
+
+Read data into R,
+
+```{r}
+library(fitdistrplus)
+library(tidyverse)
+require(gridExtra)
+barnes_data <- read.delim("Predator_and_prey_body_sizes_in_marine_food_webs_vsn4.txt")
+```
+
+
+create and select relevant columns; predator species, predator mass, prey mass, Nprey, log(pred/prey mass ratio), weighted numbers and weighted biomass. (also filter out predator species with less than 1000 entires).
+
+```{r}
+barnes <- barnes_data %>% 
++     select(Species = `Predator.common.name`,
++            wpredator = `Predator.mass`,
++            wprey = `Prey.mass`) %>% 
++     group_by(Species) %>% 
++     filter(n() > 1000) %>% 
++     mutate(Nprey = 1,
++            l = log(wpredator / wprey),
++            weight_numbers = Nprey / sum(Nprey),
++            weight_biomass = Nprey * wprey / sum(Nprey * wprey))
+```
+
+
+Bin the observations,
+
+```{r}
+no_bins <- 30  # Number of bins
+binsize <- (max(barnes$l) - min(barnes$l)) / (no_bins - 1)
+breaks <- seq(min(barnes$l) - binsize/2,
+              by = binsize, length.out = no_bins + 1)
+binned_barnes <- barnes %>% 
+  # bin data
+  mutate(cut = cut(l, breaks = breaks, right = FALSE,
+                   labels = FALSE)) %>% 
+  group_by(Species, cut) %>% 
+  summarise(Numbers = sum(Nprey), 
+            Biomass = sum(Nprey * wprey)) %>% 
+  # normalise
+  mutate(Numbers = Numbers / sum(Numbers) / binsize,
+         Biomass = Biomass / sum(Biomass) / binsize)  %>%
+  # column for predator/prey size ratio
+  mutate(l = map_dbl(cut, function(idx) breaks[idx] + binsize/2)) %>% 
+  gather(key = "Type", value = "Density", Numbers, Biomass)
+```
+
+
+Look at hex plots (to check assumption that the log predator/prey mass ratio is independent of the predator size is not unreasonable}?
+
+```{r}
+barnes %>% ggplot(aes(log(wpredator), l)) +
+  geom_hex(bins = 15) +
+  scale_fill_viridis_c(trans = "log", breaks = c(2, 10, 50, 250, 1250)) +
+  stat_smooth(method = 'loess') +
+  facet_wrap(~Species, scales = "free_x")
+```
+(all look similar apart from atlantic cod ?)
+
+
+
+fit normal densities,
+
+```{r}
+grid <- seq(0, max(barnes$l), length = 100)
+normaldens <- plyr::ddply(barnes, "Species", function(df) {data.frame(l = grid, density = dnorm(grid, mean(df$l), sd(df$l)))})
+
+ggplot(barnes) +
+  geom_density(aes(l, weight = weight_numbers), fill = "#00BFC4") +
+  facet_wrap(~Species, scales = "free_y", ncol = 4) +
+  xlab("Log of predator/prey mass ratio")  +
+  geom_line(aes(l, density), data = normaldens,colour = "blue")
+```
+
+
+Plot normal density from above fits over the biomass distribution,
+
+```{r}
+grid <- seq(0, max(barnes$l), length = 100)
+shifted_normaldens <- plyr::ddply(barnes, "Species", function(df) {data.frame(l = grid, density = dnorm(grid, mean(df$l) - sd(df$l)^2, sd(df$l)))})
+
+ggplot(barnes) +
+  geom_density(aes(l, weight = weight_biomass), fill = "#F8766D") +
+  facet_wrap(~Species, scales = "free_y", ncol = 4) +
+  xlab("Log of predator/prey mass ratio") +
+  ylab("Biomass density") +
+  geom_line(aes(l, density), data = shifted_normaldens, colour = "red")
+```
+
+From these graphs it can be seen that normal dist doesn't work for the likes of atlantic cod and silver hake as the log(pred/prey mass ratio) is less than zero, predicting that most of the biomass in the predator stomach is coming from fish larger than the predator.
+
+
+## More original analysis still using similar method.
+
+Ideas;
+Split up data into subsections and the fit distributions to the different subsets followed by comparison?
+
+I would be checking to see if some of the independence assumptions we make when working with this data actually hold.
+
+ie, different sizes of the same species (throughout their lifetime), trawls at different times of year, same species caught at different latitudes/longitudes.
+
+
+(realised post analysis below that the data set I was using actually gave me a metric for whether or not the predator 
+had reached maturity or not so the values I used need to be changed to that metric. Or alternatively use this as an opportunity to compare my definition of maturity with the one in the dataset to see if they're aligned.)
+
+
+
+## First off I am going to do some analysis of yellowfin tuna at different levels of maturity.
+
+Sorting the data,
+
+```{r}
+barnes_yellowfin_tuna <- barnes %>% filter(Species == "Yellowfin tuna")
+```
+
+
+There is a lot of speculation around the exact point that yellowfin tuna mature, however a persistent value was at 17kg so,
+
+```{r}
+yellowfin_pre_mature <- barnes_yellowfin_tuna %>% filter(wpredator < 17000)
+yellowfin_post_mature <- barnes_yellowfin_tuna %>% filter(wpredator >= 17000)
+```
+
+
+Fit normal density for pre maturity tuna,
+
+```{r}
+ypregrid <- seq(0, max(yellowfin_pre_mature$l), length = 100)
+yprenormaldens <- plyr::ddply(yellowfin_pre_mature, "Species", function(df) {
+data.frame( 
+l = grid,
+density = dnorm(grid, mean(df$l), sd(df$l)))})
+
+ypre <- ggplot(yellowfin_pre_mature) +
+  geom_density(aes(l, weight = weight_numbers)) +
+  xlab("Log of predator/prey mass ratio")  +
+  geom_line(aes(l, density), data = yprenormaldens,
+            colour = "blue")
+```
+
+
+Repeat for post maturity,
+
+```{r}
+ypostgrid <- seq(0, max(yellowfin_post_mature$l), length = 100)
+ypostnormaldens <- plyr::ddply(yellowfin_post_mature, "Species", function(df) {
+  data.frame( 
+    l = grid,
+    density = dnorm(grid, mean(df$l), sd(df$l)))})
+
+ypost <- ggplot(yellowfin_post_mature) +
+  geom_density(aes(l, weight = weight_numbers)) +
+  xlab("Log of predator/prey mass ratio")  +
+  geom_line(aes(l, density), data = ypostnormaldens,
+            colour = "blue")
+```
+
+
+Placing both plots side by side,
+
+```{r}
+grid.arrange(ypre, ypost, ncol = 2)
+```
+
+Looking at both graphs a normal fit seems to work pretty well, and all things considered there isn't much difference between the two normal curves. Seems that in general yellowfin tuna choose prey in accordance with the same pred/prey ratio pre & post maturity size.
+
+
+## Lets look at Atlantic cod now
+
+
+Atlantic cod on average reach maturity between the size range of 5-12kg so I will take the average of 8.5kg,
+
+```{r}
+barnes_atlantic_cod <- barnes %>% filter(Species == "Atlantic cod")
+
+ac_pre_mature <- barnes_atlantic_cod %>% filter(wpredator < 8500)
+ac_post_mature <- barnes_atlantic_cod %>% filter(wpredator >= 8500)
+```
+
+
+Fit normal density for pre maturity Atlantic cod,
+
+```{r}
+apregrid <- seq(0, max(ac_pre_mature$l), length = 100)
+aprenormaldens <- plyr::ddply(ac_pre_mature, "Species", function(df) {
+  data.frame( 
+    l = grid,
+    density = dnorm(grid, mean(df$l), sd(df$l)))})
+
+apre <- ggplot(ac_pre_mature) +
+  geom_density(aes(l, weight = weight_numbers)) +
+  xlab("Log of predator/prey mass ratio")  +
+  geom_line(aes(l, density), data = aprenormaldens,
+            colour = "blue")
+```
+
+
+Repeat for post maturity Atlantic cod,
+
+```{r}
+apostgrid <- seq(0, max(ac_post_mature$l), length = 100)
+apostnormaldens <- plyr::ddply(ac_post_mature, "Species", function(df) {
+  data.frame( 
+    l = grid,
+    density = dnorm(grid, mean(df$l), sd(df$l)))})
+
+apost <- ggplot(ac_post_mature) +
+  geom_density(aes(l, weight = weight_numbers)) +
+  xlab("Log of predator/prey mass ratio")  +
+  geom_line(aes(l, density), data = apostnormaldens,
+            colour = "blue")
+```
+
+Plot
+
+```{r}
+grid.arrange(apre, apost, ncol = 2)
+```
+
+The two plots for pre and post mature Atlantic cod are definitely more different than that of the yellowfin tuna plots. The data for post maturity Atlantic cod is slightly skewed to the right, however this could easily have been caused by the fact in this data set there were only 79 observations of post maturity Atlantic cod (under my definition of maturity).
+
+## Talking about wether my definition of maturity matches Barnes'
+
+
