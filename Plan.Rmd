@@ -1,0 +1,62 @@
+---
+title: "Project Plan"
+author: "Scott Connors"
+date: "27/02/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Title
+
+...Something relating to predator prey size relationships...
+
+## Abstract
+
+...Very general explanation of the report...
+
+## Contents
+
+...
+
+## Introduction
+
+...Compact explanation of what kind of analysis I will be doing, and why fisheries science, and more specifically analysis of predator prey size relationships, are important in the context of the wider world (Modeling of food chains, predicting outcomes of predation events, understanding more about a relatively mysterious part of our planet)...
+
+## Main bulk of report
+
+## Ideas (Not necessarily in order):
+
+Good practice to perform my own analysis and check to see if literature backs it up.
+
+predator/prey mass ratio(show through histograms how this is better analysed after a log transformation?),
+
+Fit distributions to log(pred/prey) mass ratio data (Normal distribution using MLE),
+
+Check to see if some of the independence assumptions we make about the data are valid based off of data available to me (fish species select prey based off similar PPMR's throughout their lifetime, the same species living in different environments function the same (different latitudes), the same species function the same throughout the year)
+
+Check to see if other distributions fit different species better,
+
+If I can find a dataset including gape size of predator fish, an interesting analysis would be to see if there is a noticeable relationship between gape size and PPMR.
+
+Discussion about prey size selection formula from "The theoretical foundations for size spectrum models of fish
+communities"Ken H. Andersen, Nis S. Jacobsen, and K.D. Farnsworth.
+
+
+
+## Conclusion
+
+...Short summary of the project...
+
+## References
+
+...
+
+
+
+
+
+
+
+
