@@ -1,0 +1,51 @@
+---
+title: "PPMR Histograms"
+author: "Scott Connors"
+date: "08/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Sorting Barnes dataset into 4 subsections containing the most common predator species in the dataset.
+
+```{r}
+acodlogppmr.example <- barnes_data %>% select(Predator.common.name, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Atlantic cod") %>% mutate(PPMR = Predator.mass / Prey.mass, LogPPMR = log(Predator.mass / Prey.mass))
+ytunalogppmr.example <- barnes_data %>% select(Predator.common.name, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Yellowfin tuna") %>% mutate(PPMR = Predator.mass / Prey.mass, LogPPMR = log(Predator.mass / Prey.mass))
+albacorelogppmr.example <- barnes_data %>% select(Predator.common.name, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Albacore") %>% mutate(PPMR = Predator.mass / Prey.mass, LogPPMR = log(Predator.mass / Prey.mass))
+dogfishlogppmr.example <- barnes_data %>% select(Predator.common.name, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Spurdog / spiny dogfish") %>% mutate(PPMR = Predator.mass / Prey.mass, LogPPMR = log(Predator.mass / Prey.mass))
+```
+
+Showing how PPMR is better after a log transformation. 
+
+```{r}
+ggplot(data = acodlogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 10000) + labs(title = "Atlantic Cod PPMR")
+ggplot(data = ytunalogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 7500) + labs(title = "Yellowfin Tuna PPMR")
+ggplot(data = albacorelogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 1000) + labs(title = "Albacore PPMR")
+ggplot(data = dogfishlogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 5000) + labs(title = "Spiny Dogfish PPMR")
+```
+
+Below histograms look more like distributions we know and also fix the problem in the above graphs where the incredibly large PPMR values made the data almost impossible to plot, whether or not these data points should be treated like outliers could be debated. On one hand the predator did eat prey small enough to create such a large PPMR, however it is widely recognised when talking about predator prey preferences that it it possible larger predators might often eat a large group of small prey thinking they were in fact one larger fish (find literature), I will be leaving these points in as I have no way of knowing which prey was eaten under the aforementioned circumstances.
+
+```{r}
+ggplot(data = acodlogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.1) + labs(title = "Atlantic Cod log(PPMR)")
+ggplot(data = ytunalogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.1) + labs(title = "Yellowfin Tuna log(PPMR)")
+ggplot(data = albacorelogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.08) + labs(title = "Albacore log(PPMR)")
+ggplot(data = dogfishlogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.09) + labs(title = "Spiny Dogfish log(PPMR)")
+```
+
+
+for some reason in the yellowfin tuna data there are 119 data points with identical predator mass and prey mass values 
+predator mass   26594.0
+prey mass       0.66784
+ppmr            39820.92
+log(ppmr)       10.59215
+
+
+similar thing happened in the Albacore data, often hundreds of data points at a time all with identical predator mass and prey mass. may be happening throughout the Barnes dataset.
+
+(mention here about odd looking PPMR histograms because of data points being potentially rounded off or, assumptions were made about certain samples being identical (laziness)).
+
+
