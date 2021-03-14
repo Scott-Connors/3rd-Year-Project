@@ -34,6 +34,8 @@ Some nice plots can be made looking at simply prey size and predator size with a
 
 predator/prey mass ratio(show through histograms how this is better analysed after a log transformation?),
 
+## Work on actually writing out the bit above for 09/03/2021 ## (Mostly Done)
+
 Fit distributions to log(pred/prey) mass ratio data (Normal distribution using MLE),
 
 Check to see if some of the independence assumptions we make about the data are valid based off of data available to me (fish species select prey based off similar PPMR's throughout their lifetime, the same species living in different environments function the same (different latitudes), the same species function the same throughout the year)
@@ -53,8 +55,20 @@ If I can find a dataset including gape size of predator fish, an interesting ana
 
 
 
+Timed plan (5 weeks left)
+15th; Write up about ppmr.
 
+week 1; Create plots of prey size and predator size with scharf regression lines (useful to be able to see/predict max/min/average sizes of prey eaten by certain sizes of predators).
 
+week 2; Introduce fitting distributions to the logppmr data via MLE's and the formula's used to do so, also create graphical fits.
 
+week 3; Continue working on fitting distribution to the data, more focus around checking to see if the independence assumptions are valid/ are other fits better/ identify what similarities there are between data fitting similar distributions. 
 
+week 4; Abstract & introduction.
+
+Final week; Finishing touches(conclusions, contents, check references, proof reading).
+
+(extra time spent looking at gape size correlation)
+
+(throughout identify key points to put on poster PPMR/Gaussian fit/MLE's)
 
