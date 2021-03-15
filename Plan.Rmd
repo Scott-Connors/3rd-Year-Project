@@ -56,9 +56,8 @@ If I can find a dataset including gape size of predator fish, an interesting ana
 
 
 Timed plan (5 weeks left)
-15th; Write up about ppmr.
 
-week 1; Create plots of prey size and predator size with scharf regression lines (useful to be able to see/predict max/min/average sizes of prey eaten by certain sizes of predators).
+week 1; Create plots of prey size and predator size with scharf regression lines (useful to be able to see/predict max/min/average sizes of prey eaten by certain sizes of predators). Introduce PPMR.
 
 week 2; Introduce fitting distributions to the logppmr data via MLE's and the formula's used to do so, also create graphical fits.
 
