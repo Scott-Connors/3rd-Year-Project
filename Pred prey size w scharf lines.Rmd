@@ -1,0 +1,73 @@
+---
+title: "Pred prey length w scharf lines"
+author: "Scott Connors"
+date: "23/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+going to hopefully use 4 most common fish species in Barnes dataset. (removed some outliers from the Atlantic cod data set where incredibly small predators had been assigned prey items thousands of times bigger than themselves)
+
+```{r}
+acodscharf <- barnes_data %>% select(Predator.common.name, Predator.length, Prey.length) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Atlantic cod") %>% filter(Prey.length < 950)
+
+ytunascharf <- barnes_data %>% select(Predator.common.name, Predator.length, Prey.length) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Yellowfin tuna") 
+
+albscharf <- barnes_data %>% select(Predator.common.name, Predator.length, Prey.length) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Albacore")
+
+dogfishscharf <- barnes_data %>% select(Predator.common.name, Predator.length, Prey.length) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Spurdog / spiny dogfish")
+```
+
+Creating pred mass against prey mass scatter plots
+
+```{r}
+ggplot(data = acodscharf, aes(x = Predator.length, y = Prey.length)) + geom_point()
+
+ggplot(data = ytunascharf, aes(x = Predator.length, y = Prey.length)) + geom_point()
+
+ggplot(data = albscharf, aes(x = Predator.length, y = Prey.length)) + geom_point()
+
+ggplot(data = dogfishscharf, aes(x = Predator.length, y = Prey.length)) + geom_point()
+```
+
+creating scharf regression equations
+
+can use equations for Atlantic cod and dogfish straight from "Predator size - prey size relationships of marine fish predators: interspecific variation and effects of ontogeny and body size on trophic-niche breadth" scharf - 2000
+
+```{r}
+require(gridExtra)
+library(quantreg)
+
+a <- ggplot(data = albscharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + scale_x_continuous( expand = c(0,0), limits = c(50,85)) + scale_y_continuous( expand = c(0,0), limits = c(0,200)) + ggtitle("Albacore")
+
+b <- ggplot(data = dogfishscharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_abline(intercept = 70.588, slope = 0.324) + geom_abline(intercept = 23.072, slope = 0.112) + geom_abline(intercept = 0.864, slope = 0.014) + ggtitle("Spiny Dogfish")
+
+c <- ggplot(data = acodscharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_abline(intercept = 32.609, slope = 0.435) + geom_abline(intercept = -21.107, slope = 0.199) + geom_abline(intercept = -6.741, slope = 0.022) + ggtitle("Atlantic Cod") 
+
+d <- ggplot(data = ytunascharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + ggtitle("Yellowfin Tuna")
+
+grid.arrange(a, b, c, d, ncol = 2, nrow = 2)
+```
+quantile selection is arbitrary.
+
+
+trying to figure out equations of regression lines
+
+```{r}
+tau <- c(0.01, 0.5, 0.99)
+qreg_fit <- rq(Prey.length ~ Predator.length, data = albscharf, tau = tau)
+summary(qreg_fit, se = "boot")
+#   Max                            Mean                   Min
+# PY = 11.32*PD - 669.61 , PY = 0.06295*PD + 0.09282 , PY = 0.04222*PD - 0.26357
+
+tau <- c(0.01, 0.5, 0.99)
+qreg_fit <- rq(Prey.length ~ Predator.length, data = ytunascharf, tau = tau)
+summary(qreg_fit, se = "boot")
+#   Max                            Mean                   Min
+# PY = 0.10930*PD + 4.43721 , PY = 0.02222*PD + 0.071111 , PY = 0.00571*PD + 0.15714
+```
+
+
