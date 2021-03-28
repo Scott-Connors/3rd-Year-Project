@@ -43,9 +43,9 @@ library(quantreg)
 
 a <- ggplot(data = albscharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + scale_x_continuous( expand = c(0,0), limits = c(50,85)) + scale_y_continuous( expand = c(0,0), limits = c(0,200)) + ggtitle("Albacore")
 
-b <- ggplot(data = dogfishscharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_abline(intercept = 70.588, slope = 0.324) + geom_abline(intercept = 23.072, slope = 0.112) + geom_abline(intercept = 0.864, slope = 0.014) + ggtitle("Spiny Dogfish")
+b <- ggplot(data = dogfishscharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + ggtitle("Spiny Dogfish")
 
-c <- ggplot(data = acodscharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_abline(intercept = 32.609, slope = 0.435) + geom_abline(intercept = -21.107, slope = 0.199) + geom_abline(intercept = -6.741, slope = 0.022) + ggtitle("Atlantic Cod") 
+c <- ggplot(data = acodscharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + ggtitle("Atlantic Cod") 
 
 d <- ggplot(data = ytunascharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + ggtitle("Yellowfin Tuna")
 
@@ -60,14 +60,24 @@ trying to figure out equations of regression lines
 tau <- c(0.01, 0.5, 0.99)
 qreg_fit <- rq(Prey.length ~ Predator.length, data = albscharf, tau = tau)
 summary(qreg_fit, se = "boot")
-#   Max                            Mean                   Min
+#   Max                            Median                   Min
 # PY = 11.32*PD - 669.61 , PY = 0.06295*PD + 0.09282 , PY = 0.04222*PD - 0.26357
+
+tau <- c(0.01, 0.5, 0.99)
+qreg_fit <- rq(Prey.length ~ Predator.length, data = dogfishscharf, tau = tau)
+summary(qreg_fit, se = "boot")
+#   Max                            Median                   Min
+# PY = 0.33333*PD + 60 , PY = 0.125*PD + 3.75 , PY = 0.01364*PD + 0.86364
+
+tau <- c(0.01, 0.5, 0.99)
+qreg_fit <- rq(Prey.length ~ Predator.length, data = acodscharf, tau = tau)
+summary(qreg_fit, se = "boot")
+#   Max                            Median                   Min
+# PY = 0.46875*PD + 14.375 , PY = 0.15162*PD - 1.01083 , PY = 0.02105*PD - 5.42105
 
 tau <- c(0.01, 0.5, 0.99)
 qreg_fit <- rq(Prey.length ~ Predator.length, data = ytunascharf, tau = tau)
 summary(qreg_fit, se = "boot")
-#   Max                            Mean                   Min
+#   Max                            Median                   Min
 # PY = 0.10930*PD + 4.43721 , PY = 0.02222*PD + 0.071111 , PY = 0.00571*PD + 0.15714
 ```
-
-
