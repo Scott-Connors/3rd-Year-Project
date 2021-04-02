@@ -21,19 +21,21 @@ dogfishlogppmr.example <- barnes_data %>% select(Predator.common.name, Predator.
 Showing how PPMR is better after a log transformation. 
 
 ```{r}
-ggplot(data = acodlogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 10000) + labs(title = "Atlantic Cod PPMR")
-ggplot(data = ytunalogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 7500) + labs(title = "Yellowfin Tuna PPMR")
-ggplot(data = albacorelogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 1000) + labs(title = "Albacore PPMR")
-ggplot(data = dogfishlogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 5000) + labs(title = "Spiny Dogfish PPMR")
+c <- ggplot(data = acodlogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 10000) + labs(title = "Atlantic Cod PPMR")
+d <- ggplot(data = ytunalogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 7500) + labs(title = "Yellowfin Tuna PPMR")
+a <- ggplot(data = albacorelogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 1000) + labs(title = "Albacore PPMR")
+b <- ggplot(data = dogfishlogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 5000) + labs(title = "Spiny Dogfish PPMR")
+grid.arrange(a, b, c, d, ncol = 2, nrow = 2)
 ```
 
 Below histograms look more like distributions we know and also fix the problem in the above graphs where the incredibly large PPMR values made the data almost impossible to plot, whether or not these data points should be treated like outliers could be debated. On one hand the predator did eat prey small enough to create such a large PPMR, however it is widely recognised when talking about predator prey preferences that it it possible larger predators might often eat a large group of small prey thinking they were in fact one larger fish (find literature), I will be leaving these points in as I have no way of knowing which prey was eaten under the aforementioned circumstances.
 
 ```{r}
-ggplot(data = acodlogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.1) + labs(title = "Atlantic Cod log(PPMR)")
-ggplot(data = ytunalogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.1) + labs(title = "Yellowfin Tuna log(PPMR)")
-ggplot(data = albacorelogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.08) + labs(title = "Albacore log(PPMR)")
-ggplot(data = dogfishlogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.09) + labs(title = "Spiny Dogfish log(PPMR)")
+c <- ggplot(data = acodlogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.1) + labs(title = "Atlantic Cod log(PPMR)")
+d <- ggplot(data = ytunalogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.1) + labs(title = "Yellowfin Tuna log(PPMR)")
+a <- ggplot(data = albacorelogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.08) + labs(title = "Albacore log(PPMR)")
+b <- ggplot(data = dogfishlogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.09) + labs(title = "Spiny Dogfish log(PPMR)")
+grid.arrange(a, b, c, d, ncol = 2, nrow = 2)
 ```
 
 

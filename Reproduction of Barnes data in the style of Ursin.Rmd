@@ -15,6 +15,17 @@ Reading the data into R and loading packages.
 library(fitdistrplus)
 library(tidyverse)
 barnes_data <- read.delim("Predator_and_prey_body_sizes_in_marine_food_webs_vsn4.txt")
+#changing all lengths to mm and weights to g
+barnes_data <- transform(barnes_data, Predator.length = ifelse(Predator.length.unit == "cm", Predator.length*10, Predator.length))
+barnes_data <- transform(barnes_data, Prey.length = ifelse(Prey.length.unit == "cm", Prey.length*10, Prey.length))
+barnes_data <- transform(barnes_data, Predator.length = ifelse(Predator.length.unit == "µm", Predator.length/1000, Predator.length))
+barnes_data <- transform(barnes_data, Prey.length = ifelse(Prey.length.unit == "µm", Prey.length/1000, Prey.length))
+barnes_data <- transform(barnes_data, Prey.mass = ifelse(Prey.mass.unit == "mg", Prey.mass/1000, Prey.mass))
+barnes_data$Predator.length.unit[barnes_data$Predator.length.unit == "cm"] <- "mm"
+barnes_data$Prey.length.unit[barnes_data$Prey.length.unit == "cm"] <- "mm"
+barnes_data$Predator.length.unit[barnes_data$Predator.length.unit == "µm"] <- "mm"
+barnes_data$Prey.length.unit[barnes_data$Prey.length.unit == "µm"] <- "mm"
+barnes_data$Predator.mass.unit[barnes_data$Predator.mass.unit == "mg"] <- "g"
 ```
 
 Filtering the data to only include data for the predator Atlantic cod, and looking at some quantities.
