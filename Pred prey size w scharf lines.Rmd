@@ -40,7 +40,7 @@ can use equations for Atlantic cod and dogfish straight from "Predator size - pr
 ```{r}
 require(gridExtra)
 library(quantreg)
-+ scale_x_continuous( expand = c(0,0), limits = c(50,85)) + scale_y_continuous( expand = c(0,0), limits = c(0,200))
+
 a <- ggplot(data = albscharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + ggtitle("Albacore")
 
 b <- ggplot(data = dogfishscharf, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + ggtitle("Spiny Dogfish")
@@ -58,29 +58,27 @@ trying to figure out equations of regression lines
 
 ```{r}
 
-#REDO NUMBERS HERE WITH NEW DATA AND UPDATE OVERLEAF WITH NEW EQUATIONS!!!!!!
-
 tau <- c(0.01, 0.5, 0.99)
 qreg_fit <- rq(Prey.length ~ Predator.length, data = albscharf, tau = tau)
 summary(qreg_fit, se = "boot")
 #   Max                            Median                   Min
-# PY = 11.32*PD - 669.61 , PY = 0.06295*PD + 0.09282 , PY = 0.04222*PD - 0.26357
+# PY = 0.66462*PD - 269.48154 , PY = 0.06752*PD - 4.22560 , PY = 0.04697*PD - 14.38292
 
 tau <- c(0.01, 0.5, 0.99)
 qreg_fit <- rq(Prey.length ~ Predator.length, data = dogfishscharf, tau = tau)
 summary(qreg_fit, se = "boot")
 #   Max                            Median                   Min
-# PY = 0.33333*PD + 60 , PY = 0.125*PD + 3.75 , PY = 0.01364*PD + 0.86364
+# PY = 0.33333*PD + 60 , PY = 0.12766*PD + 1.70213 , PY = 0.01364*PD + 0.86364
 
 tau <- c(0.01, 0.5, 0.99)
 qreg_fit <- rq(Prey.length ~ Predator.length, data = acodscharf, tau = tau)
 summary(qreg_fit, se = "boot")
 #   Max                            Median                   Min
-# PY = 0.46875*PD + 14.375 , PY = 0.15162*PD - 1.01083 , PY = 0.02105*PD - 5.42105
+# PY = 0.42222*PD + 36.00000 , PY = 0.17391*PD - 12.17391 , PY = 0.02154*PD - 5.84615
 
 tau <- c(0.01, 0.5, 0.99)
 qreg_fit <- rq(Prey.length ~ Predator.length, data = ytunascharf, tau = tau)
 summary(qreg_fit, se = "boot")
 #   Max                            Median                   Min
-# PY = 0.10930*PD + 4.43721 , PY = 0.02222*PD + 0.071111 , PY = 0.00571*PD + 0.15714
+# PY = 0.10930*PD + 44.37209 , PY = 0.02222*PD + 7.11111 , PY = 0.00571*PD + 1.57143
 ```
