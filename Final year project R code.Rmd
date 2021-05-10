@@ -1,0 +1,390 @@
+---
+title: "Final year project R code"
+author: "Scott Connors"
+date: "09/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Reading the data into R and loading packages.
+
+```{r}
+library(tidyverse)
+library(quantreg)
+require(gridExtra)
+
+barnes_data <- read.delim("Predator_and_prey_body_sizes_in_marine_food_webs_vsn4.txt")
+barnes_orig <- barnes_data
+#changing all lengths to mm and weights to g
+barnes_data <- transform(barnes_data, Predator.length = ifelse(Predator.length.unit == "cm", Predator.length*10, Predator.length))
+barnes_data <- transform(barnes_data, Prey.length = ifelse(Prey.length.unit == "cm", Prey.length*10, Prey.length))
+barnes_data <- transform(barnes_data, Predator.length = ifelse(Predator.length.unit == "µm", Predator.length/1000, Predator.length))
+barnes_data <- transform(barnes_data, Prey.length = ifelse(Prey.length.unit == "µm", Prey.length/1000, Prey.length))
+barnes_data <- transform(barnes_data, Prey.mass = ifelse(Prey.mass.unit == "mg", Prey.mass/1000, Prey.mass))
+barnes_data$Predator.length.unit[barnes_data$Predator.length.unit == "cm"] <- "mm"
+barnes_data$Prey.length.unit[barnes_data$Prey.length.unit == "cm"] <- "mm"
+barnes_data$Predator.length.unit[barnes_data$Predator.length.unit == "µm"] <- "mm"
+barnes_data$Prey.length.unit[barnes_data$Prey.length.unit == "µm"] <- "mm"
+barnes_data$Predator.mass.unit[barnes_data$Predator.mass.unit == "mg"] <- "g"
+```
+
+Filtering out the four most common predator species in the data set.
+
+```{r}
+albfit <- barnes_data %>% select(Predator.common.name, Prey.common.name, Predator.length, Prey.length, Predator.length.unit, Prey.length.unit, Predator.lifestage, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Albacore") %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+
+dogfishfit <- barnes_data %>% select(Predator.common.name, Prey.common.name, Predator.length, Prey.length, Predator.length.unit, Prey.length.unit, Predator.lifestage, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Spurdog / spiny dogfish") %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+
+acodfit <- barnes_data %>% select(Predator.common.name, Prey.common.name, Predator.length, Prey.length, Predator.length.unit, Prey.length.unit, Predator.lifestage, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Atlantic cod") %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+
+ytunafit <- barnes_data %>% select(Predator.common.name, Prey.common.name, Predator.length, Prey.length, Predator.length.unit, Prey.length.unit, Predator.lifestage, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Yellowfin tuna") %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+```
+
+Creating scatter plots with quantile regression lines.
+
+```{r}
+a <- ggplot(data = albfit, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + ggtitle("Albacore")
+
+b <- ggplot(data = dogfishfit, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + ggtitle("Spiny Dogfish")
+
+c <- ggplot(data = acodfit, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + ggtitle("Atlantic Cod") 
+
+d <- ggplot(data = ytunafit, aes(x = Predator.length, y = Prey.length)) + geom_point() + geom_quantile(quantiles = 0.01) + geom_quantile(quantiles = 0.5) + geom_quantile(quantiles =  0.99) + ggtitle("Yellowfin Tuna")
+
+grid.arrange(a, b, c, d, ncol = 2, nrow = 2)
+```
+
+figuring out equations of regression lines.
+
+```{r}
+
+tau <- c(0.01, 0.5, 0.99)
+qreg_fit <- rq(Prey.length ~ Predator.length, data = albfit, tau = tau)
+summary(qreg_fit, se = "boot")
+#   Max                            Median                   Min
+# PY = 0.66462*PD - 269.48154 , PY = 0.06752*PD - 4.22560 , PY = 0.04697*PD - 14.38292
+
+tau <- c(0.01, 0.5, 0.99)
+qreg_fit <- rq(Prey.length ~ Predator.length, data = dogfishfit, tau = tau)
+summary(qreg_fit, se = "boot")
+#   Max                            Median                   Min
+# PY = 0.33333*PD + 60 , PY = 0.12766*PD + 1.70213 , PY = 0.01364*PD + 0.86364
+
+tau <- c(0.01, 0.5, 0.99)
+qreg_fit <- rq(Prey.length ~ Predator.length, data = acodfit, tau = tau)
+summary(qreg_fit, se = "boot")
+#   Max                            Median                   Min
+# PY = 0.42222*PD + 36.00000 , PY = 0.17391*PD - 12.17391 , PY = 0.02154*PD - 5.84615
+
+tau <- c(0.01, 0.5, 0.99)
+qreg_fit <- rq(Prey.length ~ Predator.length, data = ytunafit, tau = tau)
+summary(qreg_fit, se = "boot")
+#   Max                            Median                   Min
+# PY = 0.10930*PD + 44.37209 , PY = 0.02222*PD + 7.11111 , PY = 0.00571*PD + 1.57143
+```
+
+Now creating histograms for showing that it is better to work with Log(PPMR) over PPMR.
+
+```{r}
+acodlogppmr.example <- barnes_data %>% select(Predator.common.name, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Atlantic cod") %>% mutate(PPMR = Predator.mass / Prey.mass, LogPPMR = log(Predator.mass / Prey.mass))
+ytunalogppmr.example <- barnes_data %>% select(Predator.common.name, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Yellowfin tuna") %>% mutate(PPMR = Predator.mass / Prey.mass, LogPPMR = log(Predator.mass / Prey.mass))
+albacorelogppmr.example <- barnes_data %>% select(Predator.common.name, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Albacore") %>% mutate(PPMR = Predator.mass / Prey.mass, LogPPMR = log(Predator.mass / Prey.mass))
+dogfishlogppmr.example <- barnes_data %>% select(Predator.common.name, Predator.mass, Prey.mass) %>% group_by(Predator.common.name) %>% filter(Predator.common.name == "Spurdog / spiny dogfish") %>% mutate(PPMR = Predator.mass / Prey.mass, LogPPMR = log(Predator.mass / Prey.mass))
+```
+
+PPMR histograms.
+
+```{r}
+a <- ggplot(data = albacorelogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 1000) + labs(title = "Albacore") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+b <- ggplot(data = dogfishlogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 5000) + labs(title = "Spiny Dogfish") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+c <- ggplot(data = acodlogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 10000) + labs(title = "Atlantic Cod") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+d <- ggplot(data = ytunalogppmr.example, aes(PPMR)) + geom_histogram(binwidth = 7500) + labs(title = "Yellowfin Tuna") + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+grid.arrange(a, b, c, d, ncol = 2, nrow = 2)
+```
+
+Log(PPMR) histograms.
+
+```{r}
+a <- ggplot(data = albacorelogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.08) + labs(title = "Albacore")
+b <- ggplot(data = dogfishlogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.09) + labs(title = "Spiny Dogfish")
+c <- ggplot(data = acodlogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.1) + labs(title = "Atlantic Cod")
+d <- ggplot(data = ytunalogppmr.example, aes(LogPPMR)) + geom_histogram(binwidth = 0.1) + labs(title = "Yellowfin Tuna")
+grid.arrange(a, b, c, d, ncol = 2, nrow = 2)
+```
+
+Coding the normal MLE's and density function into R for distributional fits.
+
+```{r}
+Mean_MLE <- function(n, logppmr) {
+  MLEmean <- (1/n)*sum(logppmr)
+  return(MLEmean)
+}
+
+SD_MLE <- function(n, logppmr, mean) {
+  MLEsd <- sqrt((1/n)*sum((logppmr-mean)^2))
+  return(MLEsd)
+}
+Ursin_Density <- function(logppmr, sd, mean) {
+  Ursin_fit <- (exp(-(((logppmr - mean)^2)/(2*sd^2))))/(sd*sqrt(2*pi))
+  return(Ursin_fit)
+}
+```
+
+Creating Q_Q plots
+
+```{r}
+a <- ggplot(albfit, aes(sample = LogPPMR)) + ggtitle("Albacore") + stat_qq() + stat_qq_line()
+b <- ggplot(dogfishfit, aes(sample = LogPPMR)) + ggtitle("Spiny Dogfish") + stat_qq() + stat_qq_line()
+c <- ggplot(acodfit, aes(sample = LogPPMR)) + ggtitle("Atlantic Cod") + stat_qq() + stat_qq_line()
+d <- ggplot(ytunafit, aes(sample = LogPPMR)) + ggtitle("Yellowfin Tuna") + stat_qq() + stat_qq_line()
+
+grid.arrange(a, b, c, d, ncol = 2, nrow = 2)
+```
+
+Finding standard errors of ML estimators.
+
+```{r}
+## Finding MLE's
+Mean_MLE(3581, albfit$LogPPMR)
+SD_MLE(3581, albfit$LogPPMR, Mean_MLE(3581, albfit$LogPPMR))
+
+Mean_MLE(3287, dogfishfit$LogPPMR)
+SD_MLE(3287, dogfishfit$LogPPMR, Mean_MLE(3287, dogfishfit$LogPPMR))
+
+Mean_MLE(2518, acodfit$LogPPMR)
+SD_MLE(2518, acodfit$LogPPMR, Mean_MLE(2518, acodfit$LogPPMR))
+
+Mean_MLE(2113, ytunafit$LogPPMR)
+SD_MLE(2113, ytunafit$LogPPMR, Mean_MLE(2113, ytunafit$LogPPMR))
+
+## General method for finding standard errors.
+
+log_lik <- function(par_vec, x) {
+  if(par_vec[2] < 0) return(1e8)
+  lik <- dnorm(x,
+               mean = par_vec[1],
+               sd = par_vec[2])
+   if(all(lik == 0)) return(1e8)
+  return(-sum(log(lik[lik != 0])))
+}
+
+
+coef_est <- optim(par = c(0,0),
+      fn = log_lik, hessian = T,
+      x = X)
+
+print(sqrt(diag(solve(coef_est$hessian))))
+
+## Albacore 
+X <- albfit$LogPPMR
+
+coef_est <- optim(par = c(9.546003,1.146738),
+      fn = log_lik, hessian = T,
+      x = X)
+
+print(coef_est)
+print(sqrt(diag(solve(coef_est$hessian))))
+
+## 0.01916294 0.01355020
+
+## Spiny Dogfish
+X <- dogfishfit$LogPPMR
+
+coef_est <- optim(par = c(5.537637,2.193598),
+      fn = log_lik, hessian = T,
+      x = X)
+
+print(coef_est)
+print(sqrt(diag(solve(coef_est$hessian))))
+
+## 0.03826108 0.02705464
+
+## Atlantic Cod
+X <- acodfit$LogPPMR
+
+coef_est <- optim(par = c(5.725514,2.600442),
+      fn = log_lik, hessian = T,
+      x = X)
+
+print(coef_est)
+print(sqrt(diag(solve(coef_est$hessian))))
+
+## 0.05182261 0.03664411
+
+## Yellowfin Tuna
+X <- ytunafit$LogPPMR
+
+coef_est <- optim(par = c(10.16201,1.802751),
+                   fn = log_lik, hessian = T,
+                   x = X)
+
+print(coef_est)
+print(sqrt(diag(solve(coef_est$hessian))))
+
+## 0.03921805 0.02773131
+```
+
+Creating normal fits.
+
+```{r}
+a <- albfit %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") +
+  stat_function(fun = dnorm, n = 3581 , args = list(mean = Mean_MLE(3581, albfit$LogPPMR), sd = SD_MLE(3581, albfit$LogPPMR,  Mean_MLE(3581, albfit$LogPPMR))))+ ggtitle("Albacore") + expand_limits(x = c(0,17))
+
+
+
+b <- dogfishfit %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") +
+  stat_function(fun = dnorm, n = 3287 , args = list(mean = Mean_MLE(3287, dogfishfit$LogPPMR), sd = SD_MLE(3287, dogfishfit$LogPPMR,  Mean_MLE(3287, dogfishfit$LogPPMR))))+ ggtitle("Spiny Dogfish")+ expand_limits(x = c(0,17))
+
+
+c <- acodfit %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") +
+  stat_function(fun = dnorm, n = 2518 , args = list(mean =  Mean_MLE(2518, acodfit$LogPPMR), sd = SD_MLE(2518, acodfit$LogPPMR,  Mean_MLE(2518, acodfit$LogPPMR))))+ ggtitle("Atlantic Cod")+ expand_limits(x = c(0,17))
+
+
+
+d <- ytunafit %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") +
+  stat_function(fun = dnorm, n = 2113 , args = list(mean = Mean_MLE(2113, ytunafit$LogPPMR), sd = SD_MLE(2113, ytunafit$LogPPMR,  Mean_MLE(2113, ytunafit$LogPPMR))))+ ggtitle("Yellowfin Tuna")+ expand_limits(x = c(0,17))
+
+grid.arrange(a, b, c, d, ncol = 2, nrow = 2)
+```
+
+Creating skewness and curtosis plot for Albacore.
+
+```{r}
+library(fitdistrplus)
+descdist(albfit$LogPPMR, boot = 1000)
+```
+
+Fitting 5 dists over a histogram of Log(PPMR) Albacore data & using summary to check AIC values for each fit.
+
+```{r}
+fln <- fitdist(albfit$LogPPMR, "lnorm")
+fg <- fitdist(albfit$LogPPMR, "gamma")
+fwb <- fitdist(albfit$LogPPMR, "weibull")
+fn <- fitdist(albfit$LogPPMR, "norm")
+fl <- fitdist(albfit$LogPPMR, "logis")
+
+summary(fln)
+summary(fg)
+summary(fwb)
+summary(fn)
+summary(fl)
+
+plot.legend <- c("lognormal", "gamma", "normal", "weibull", "logistic")
+denscomp(list(fln, fg, fn, fwb, fl), legendtext = plot.legend)
+```
+
+testing adult and juvenile ppmr values.
+
+```{r}
+yellowfin_pre_mature <- ytunafit %>% filter(Predator.mass < 33000)
+yellowfin_post_mature <- ytunafit %>% filter(Predator.mass >= 33000)
+
+acod_pre_mature <- acodfit %>% filter(Predator.length < 410)
+acod_post_mature <- acodfit %>% filter(Predator.length >= 410)
+
+
+sdog_pre_mature <- dogfishfit %>% filter(Predator.length < 685)
+sdog_post_mature <- dogfishfit %>% filter(Predator.length >= 685)
+
+##plots
+
+a <- yellowfin_post_mature %>% ggplot(aes(x = LogPPMR)) + stat_function(fun = dnorm, n = 777 , args = list(mean = Mean_MLE(777, yellowfin_post_mature$LogPPMR), sd = SD_MLE(777, yellowfin_post_mature$LogPPMR,  Mean_MLE(777, yellowfin_post_mature$LogPPMR))), colour = "red") + stat_function(fun = dnorm, n = 1336 , args = list(mean = Mean_MLE(1336, yellowfin_pre_mature$LogPPMR), sd = SD_MLE(1336, yellowfin_pre_mature$LogPPMR,  Mean_MLE(1336, yellowfin_pre_mature$LogPPMR))), colour = "blue") + stat_function(fun = dnorm, n = 2113 , args = list(mean = Mean_MLE(2113, ytunafit$LogPPMR), sd = SD_MLE(2113, ytunafit$LogPPMR,  Mean_MLE(2113, ytunafit$LogPPMR)))) + ggtitle("Yellowfin Tuna") + expand_limits(x = c(0,17)) + ylab("density")
+
+b <- acod_post_mature %>% ggplot(aes(x = LogPPMR)) + stat_function(fun = dnorm, n = 2266 , args = list(mean = Mean_MLE(2266, acod_post_mature$LogPPMR), sd = SD_MLE(2266, acod_post_mature$LogPPMR,  Mean_MLE(2266, acod_post_mature$LogPPMR))), colour = "red") + stat_function(fun = dnorm, n = 252 , args = list(mean = Mean_MLE(252, acod_pre_mature$LogPPMR), sd = SD_MLE(252, acod_pre_mature$LogPPMR,  Mean_MLE(252, acod_pre_mature$LogPPMR))), colour = "blue") + stat_function(fun = dnorm, n = 2518 , args = list(mean =  Mean_MLE(2518, acodfit$LogPPMR), sd = SD_MLE(2518, acodfit$LogPPMR,  Mean_MLE(2518, acodfit$LogPPMR)))) + ggtitle("Atlantic Cod") + expand_limits(x = c(0,17)) + ylab("density")
+
+c <- sdog_post_mature %>% ggplot(aes(x = LogPPMR)) + stat_function(fun = dnorm, n = 2825 , args = list(mean = Mean_MLE(2825, sdog_post_mature$LogPPMR), sd = SD_MLE(2825, sdog_post_mature$LogPPMR,  Mean_MLE(2825, sdog_post_mature$LogPPMR))), colour = "red") + stat_function(fun = dnorm, n = 462 , args = list(mean = Mean_MLE(462, sdog_pre_mature$LogPPMR), sd = SD_MLE(462, sdog_pre_mature$LogPPMR,  Mean_MLE(462, sdog_pre_mature$LogPPMR))), colour = "blue") + stat_function(fun = dnorm, n = 3287 , args = list(mean = Mean_MLE(3287, dogfishfit$LogPPMR), sd = SD_MLE(3287, dogfishfit$LogPPMR,  Mean_MLE(3287, dogfishfit$LogPPMR)))) + ggtitle("Spiny Dogfish") + expand_limits(x = c(0,17)) + ylab("density")
+
+grid.arrange(a, b, c, ncol = 3)
+
+```
+
+Testing how statistically significant the differences in adult and juvenile means are.
+
+```{r}
+t.test(x = ytunafit$LogPPMR, alternative = "two.sided", mu = 10.32082, var.equal = FALSE, conf.level = 0.05) #post mature
+t.test(x = ytunafit$LogPPMR, alternative = "two.sided", mu = 10.06965, var.equal = FALSE, conf.level = 0.05) #pre mature
+
+t.test(x = acodfit$LogPPMR, alternative = "two.sided", mu = 5.723287, var.equal = FALSE, conf.level = 0.05)
+t.test(x = acodfit$LogPPMR, alternative = "two.sided", mu = 5.745541, var.equal = FALSE, conf.level = 0.05)
+
+t.test(x = dogfishfit$LogPPMR, alternative = "two.sided", mu = 5.588913, var.equal = FALSE, conf.level = 0.05)
+t.test(x = dogfishfit$LogPPMR, alternative = "two.sided", mu = 5.224098, var.equal = FALSE, conf.level = 0.05)
+```
+
+Testing how the normal distribution fits to filter feeders and longfin squid.
+
+```{r}
+barnes_cephalopod <- barnes_data %>% 
+     select(Predator.common.name,Predator..taxon , Prey.common.name, Predator.mass, Prey.mass, Mean.annual.temp, Geographic.location) %>% 
+     group_by(Predator.common.name) %>% filter(Predator..taxon == "cephalopod") %>%
+     mutate(LogPPMR = log(Predator.mass / Prey.mass))
+
+
+SANDFIT <-  barnes_data %>% select(Predator.common.name, Prey.common.name, Predator.mass, Prey.mass, Mean.annual.temp, Geographic.location)  %>% filter(Predator.common.name == "Pacific sandlance")%>% group_by(Predator.common.name) %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+
+PHFIT <-  barnes_data %>% select(Predator.common.name, Prey.common.name, Predator.mass, Prey.mass, Mean.annual.temp, Geographic.location)  %>% filter(Predator.common.name == "Pacific herring")%>% group_by(Predator.common.name) %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+
+APFIT <-  barnes_data %>% select(Predator.common.name, Prey.common.name, Predator.mass, Prey.mass, Mean.annual.temp, Geographic.location)  %>% filter(Predator.common.name == "Alaskan pollack") %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+
+
+## Plots
+
+
+a <- SANDFIT %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") +
+  stat_function(fun = dnorm, n = 136 , args = list(mean = Mean_MLE(136, SANDFIT$LogPPMR), sd = SD_MLE(136, SANDFIT$LogPPMR,  Mean_MLE(136, SANDFIT$LogPPMR))))+ ggtitle("Pacific Sandlance") + expand_limits(x = c(0,17))
+
+b <- APFIT %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") +
+  stat_function(fun = dnorm, n = 162 , args = list(mean = Mean_MLE(162, APFIT$LogPPMR), sd = SD_MLE(162, APFIT$LogPPMR,  Mean_MLE(162, APFIT$LogPPMR))))+ ggtitle("Atlantic Pollock") + expand_limits(x = c(0,17))
+
+
+c <- PHFIT %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") +
+  stat_function(fun = dnorm, n = 28 , args = list(mean = Mean_MLE(28, PHFIT$LogPPMR), sd = SD_MLE(28, PHFIT$LogPPMR,  Mean_MLE(28, PHFIT$LogPPMR))))+ ggtitle("Pacific Herring") + expand_limits(x = c(0,17))
+
+d <- barnes_cephalopod %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") + stat_function(fun = dnorm, n = 113 , args = list(mean = Mean_MLE(113, barnes_cephalopod$LogPPMR), sd = SD_MLE(113, barnes_cephalopod$LogPPMR,  Mean_MLE(113, barnes_cephalopod$LogPPMR))))+ ggtitle("Longfin squid") + expand_limits(x = c(0,17))
+
+grid.arrange(a, b, c, d, ncol = 2, nrow = 2)
+```
+
+Testing the relationship between temperature and PPMR.
+
+```{r}
+min_10.predators <- barnes_data %>% filter(Mean.annual.temp < 10) %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+bot.mid.temp.predators <- barnes_data %>% filter(Mean.annual.temp >= 10 & Mean.annual.temp < 15) %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+up.mid.temp.predators <- barnes_data %>% filter(Mean.annual.temp >= 15 & Mean.annual.temp < 20) %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+high.temp.predators <- barnes_data %>% filter(Mean.annual.temp > 20) %>% mutate(LogPPMR = log(Predator.mass / Prey.mass))
+
+## Empirical density plots
+
+a <- min_10.predators %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") + ggtitle("< 10deg ") + coord_cartesian(xlim =c(0, 17))
+
+b <- bot.mid.temp.predators %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") + ggtitle("10deg to < 15deg") + coord_cartesian(xlim =c(0, 17))
+
+c <- up.mid.temp.predators %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") + ggtitle("15deg to < 20deg") + coord_cartesian(xlim =c(0, 17))
+
+d <- high.temp.predators %>% ggplot(aes(x = LogPPMR)) + geom_density(fill = "lightblue") + ggtitle("> 20deg") + coord_cartesian(xlim =c(0, 17))
+
+grid.arrange(a, b, c, d, nrow = 4)
+
+# Log(PPMR) means by temp
+
+mean(min_10.predators$LogPPMR)
+10.36361
+
+mean(bot.mid.temp.predators$LogPPMR)
+6.718306
+
+mean(up.mid.temp.predators$LogPPMR)
+6.32164
+
+mean(high.temp.predators$LogPPMR)
+8.960437
+
+# Overall mean
+
+mean(barnes_data$LogPPMR)
+7.008117
+
+```
